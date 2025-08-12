@@ -1,7 +1,12 @@
 #include <stdio.h>
+#include <stdlib.h> // >>> MODIFICAÇÃO <<< Necessário para usar abs()
 
 #define TAM_TABULEIRO 10
 #define TAM_NAVIO 3
+#define TAM_HABILIDADE 5 // >>> MODIFICAÇÃO <<< Tamanho fixo para as matrizes de habilidades
+
+/////////////////////////////////// NIVEL INICIANTE //////////////////////////////////////////////////////////
+
 
 /*Função para exibir o tabuleiro
 void exibirTabuleiro(int tabuleiro[TAM_TABULEIRO][TAM_TABULEIRO]) {
@@ -74,7 +79,10 @@ int main() {
     return 0;
 } */
 
-// >>> MODIFICAÇÃO <<<
+/////////////////////////////////////////////NIVEL INTERMEDIARIO ////////////////////////////////////////////////////////////////////
+
+
+/* >>> MODIFICAÇÃO <<<
 // Nova função para exibir o tabuleiro com cabeçalhos e símbolos (~ para água, N para navio)
 void exibirTabuleiro(int tabuleiro[TAM_TABULEIRO][TAM_TABULEIRO]) {
     printf("Tabuleiro:\n   ");
@@ -160,6 +168,149 @@ int main() {
 
     // >>> MODIFICAÇÃO <<<
     // Exibe o tabuleiro com os navios posicionados
+    exibirTabuleiro(tabuleiro);
+
+    return 0;
+} */
+
+/////////////////////////////////////// NIVEL MESTRE ///////////////////////////////////////////////
+
+// >>> MODIFICAÇÃO <<<
+// Exibe o tabuleiro com diferentes símbolos
+void exibirTabuleiro(int tabuleiro[TAM_TABULEIRO][TAM_TABULEIRO]) {
+    printf("Tabuleiro:\n   ");
+    for (int j = 0; j < TAM_TABULEIRO; j++)
+        printf("%2d ", j);
+    printf("\n");
+
+    for (int i = 0; i < TAM_TABULEIRO; i++) {
+        printf("%2d ", i);
+        for (int j = 0; j < TAM_TABULEIRO; j++) {
+            if (tabuleiro[i][j] == 3)
+                printf(" N ");
+            else if (tabuleiro[i][j] == 5)
+                printf(" * "); // >>> MODIFICAÇÃO <<< símbolo para área afetada por habilidades
+            else
+                printf(" ~ ");
+        }
+        printf("\n");
+    }
+}
+
+// (funções de navio - sem modificação)
+int estaOcupado(int tabuleiro[TAM_TABULEIRO][TAM_TABULEIRO], int linha, int coluna) {
+    return tabuleiro[linha][coluna] != 0;
+}
+
+int posicionarNavio(int tabuleiro[TAM_TABULEIRO][TAM_TABULEIRO], int linha, int coluna, char direcao) {
+    for (int i = 0; i < TAM_NAVIO; i++) {
+        int l = linha, c = coluna;
+        if (direcao == 'H') c += i;
+        else if (direcao == 'V') l += i;
+        else if (direcao == 'D') { l += i; c += i; }
+        else if (direcao == 'E') { l += i; c -= i; }
+
+        if (l >= TAM_TABULEIRO || c >= TAM_TABULEIRO || l < 0 || c < 0)
+            return 0;
+        if (estaOcupado(tabuleiro, l, c))
+            return 0;
+    }
+
+    for (int i = 0; i < TAM_NAVIO; i++) {
+        int l = linha, c = coluna;
+        if (direcao == 'H') c += i;
+        else if (direcao == 'V') l += i;
+        else if (direcao == 'D') { l += i; c += i; }
+        else if (direcao == 'E') { l += i; c -= i; }
+
+        tabuleiro[l][c] = 3;
+    }
+
+    return 1;
+}
+
+// >>> MODIFICAÇÃO <<<
+// Gera matriz em forma de cone apontando para baixo
+void gerarCone(int matriz[TAM_HABILIDADE][TAM_HABILIDADE]) {
+    for (int i = 0; i < TAM_HABILIDADE; i++) {
+        for (int j = 0; j < TAM_HABILIDADE; j++) {
+            if (i == 0 && j == 2) matriz[i][j] = 1;
+            else if (i == 1 && j >= 1 && j <= 3) matriz[i][j] = 1;
+            else if (i == 2) matriz[i][j] = 1;
+            else matriz[i][j] = 0;
+        }
+    }
+}
+
+// >>> MODIFICAÇÃO <<<
+// Gera matriz em forma de cruz (vertical e horizontal)
+void gerarCruz(int matriz[TAM_HABILIDADE][TAM_HABILIDADE]) {
+    for (int i = 0; i < TAM_HABILIDADE; i++) {
+        for (int j = 0; j < TAM_HABILIDADE; j++) {
+            if (i == 2 || j == 2)
+                matriz[i][j] = 1;
+            else
+                matriz[i][j] = 0;
+        }
+    }
+}
+
+// >>> MODIFICAÇÃO <<<
+// Gera matriz em forma de octaedro (losango usando distância de Manhattan)
+void gerarOctaedro(int matriz[TAM_HABILIDADE][TAM_HABILIDADE]) {
+    for (int i = 0; i < TAM_HABILIDADE; i++) {
+        for (int j = 0; j < TAM_HABILIDADE; j++) {
+            if (abs(i - 2) + abs(j - 2) <= 2)
+                matriz[i][j] = 1;
+            else
+                matriz[i][j] = 0;
+        }
+    }
+}
+
+// >>> MODIFICAÇÃO <<<
+// Aplica a matriz de habilidade ao tabuleiro, centrada na coordenada (origemLinha, origemColuna)
+void aplicarHabilidade(int tabuleiro[TAM_TABULEIRO][TAM_TABULEIRO], int habilidade[TAM_HABILIDADE][TAM_HABILIDADE], int origemLinha, int origemColuna) {
+    int offset = TAM_HABILIDADE / 2;
+
+    for (int i = 0; i < TAM_HABILIDADE; i++) {
+        for (int j = 0; j < TAM_HABILIDADE; j++) {
+            int l = origemLinha - offset + i;
+            int c = origemColuna - offset + j;
+
+            if (l >= 0 && l < TAM_TABULEIRO && c >= 0 && c < TAM_TABULEIRO) {
+                if (habilidade[i][j] == 1 && tabuleiro[l][c] == 0)
+                    tabuleiro[l][c] = 5; // >>> MODIFICAÇÃO <<< marca área de habilidade no tabuleiro
+            }
+        }
+    }
+}
+
+int main() {
+    int tabuleiro[TAM_TABULEIRO][TAM_TABULEIRO] = {0};
+
+    // (navios - igual ao código anterior)
+    posicionarNavio(tabuleiro, 2, 1, 'H');
+    posicionarNavio(tabuleiro, 0, 5, 'V');
+    posicionarNavio(tabuleiro, 4, 4, 'D');
+    posicionarNavio(tabuleiro, 6, 8, 'E');
+
+    // >>> MODIFICAÇÃO <<< Criação das 3 matrizes de habilidade
+    int cone[TAM_HABILIDADE][TAM_HABILIDADE];
+    int cruz[TAM_HABILIDADE][TAM_HABILIDADE];
+    int octaedro[TAM_HABILIDADE][TAM_HABILIDADE];
+
+    // >>> MODIFICAÇÃO <<< Preenchimento dinâmico das matrizes
+    gerarCone(cone);
+    gerarCruz(cruz);
+    gerarOctaedro(octaedro);
+
+    // >>> MODIFICAÇÃO <<< Aplicação das habilidades ao tabuleiro
+    aplicarHabilidade(tabuleiro, cone, 3, 3);      // Cone centrado em (3,3)
+    aplicarHabilidade(tabuleiro, cruz, 5, 5);      // Cruz centrada em (5,5)
+    aplicarHabilidade(tabuleiro, octaedro, 7, 2);  // Octaedro centrado em (7,2)
+
+    // Exibir tabuleiro final com navios e áreas afetadas
     exibirTabuleiro(tabuleiro);
 
     return 0;
